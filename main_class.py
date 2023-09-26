@@ -568,9 +568,9 @@ class track_updates:
                         uids[str(line[1])] = {str(line[0]): [line[6],line[5],line[-4],line[-3]]}
                         
                  else:
-                 previous_hour = float(line[0]) - 1
+                     previous_hour = float(line[0]) - 1
 
-                    try:
+                     try:
                         newline = {str(line[0]): [line[6],line[5],line[-4],line[-3]]}
                         uids[str(line[1])].update(newline)   
 
@@ -581,20 +581,20 @@ class track_updates:
 
                         predicts = predict_location(float(previous_mu), float(previous_mv), 
                                                   float(previous_lat), float(previous_lon))
-                    except KeyError:
+                     except KeyError:
                         uids[str(line[1])] = {str(line[0]): [line[6],line[5],line[-4],line[-3]]}
                         predicts = (line[6], line[5])
 
-                    predict_x, predict_y = predicts[0], predicts[1]
+                     predict_x, predict_y = predicts[0], predicts[1]
 
-                    predict_lat.append(predict_x)
-                    predict_lon.append(predict_y)
+                     predict_lat.append(predict_x)
+                     predict_lon.append(predict_y)
 
-                self.tracks_file['Mean_Predict_Lat'] = predict_lat
-                self.tracks_file['Mean_Predict_Lon'] = predict_lon                
+                 self.tracks_file['Mean_Predict_Lat'] = predict_lat
+                 self.tracks_file['Mean_Predict_Lon'] = predict_lon                
 
 
-                self.tracks_file.to_csv('./tracks/rawtracks_%s.csv' % \
+                 self.tracks_file.to_csv('./tracks/rawtracks_%s.csv' % \
                   (str(self.start_date)[0:10]))
 
 

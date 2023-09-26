@@ -137,7 +137,6 @@ class Instance_Functions:
 
         if hour % 3 == 0:
                         
-
             self.converted_height = self.instance_list['Z'].param[:,...] - self.instance_list['HGT'].param[0,...]
             self.zz = xarray.DataArray(np.array(destagger(self.instance_list['Z'].param[:,...],0)) - np.array(self.instance_list['HGT'].param[0,...]))
 
@@ -450,52 +449,49 @@ class track_updates:
     # Grabs the Bunkers motion vector for the cell locations. 
     def get_bunkers(self):
 
-    read_file = pd.read_csv('./tracks/nobunk_%s.csv' % (str(self.start_date)))
-    bunkers_u, bunkers_v, mean_u, mean_v = [], [], [], []
+        read_file = pd.read_csv('./tracks/nobunk_%s.csv' % (str(self.start_date)))
+        bunkers_u, bunkers_v, mean_u, mean_v = [], [], [], []
 
-    for index, line in read_file.iterrows():
+        for index, line in read_file.iterrows():
                
-        date = str(line[2])
-        hour = int(str(date[11:13]))
-        date = str(date[:10]) + '-' + str(date[11:13])
+            date = str(line[2])
+            hour = int(str(date[11:13]))
+            date = str(date[:10]) + '-' + str(date[11:13])
 
-        date = hour_check(line[2])
+            date = hour_check(line[2])
         
-        date = str(date[:10]) + '-' + str(date[11:13])
+            date = str(date[:10]) + '-' + str(date[11:13])
         
+            lon, lat = float(line[5]), float(line[6])
 
-        lon, lat = float(line[5]), float(line[6])
-
-        i,j = get_closest_lat_lon(self.data_dict[date].latitude, 
-                self.data_dict[date].longitude, lat, lon)
+            i,j = get_closest_lat_lon(self.data_dict[date].latitude, self.data_dict[date].longitude, lat, lon)
 
 
 # Awkward section here. But this changes the points that are pulled for the Bunkers and Mean
 # wind calculation if the cell is too close to the boundaries. 
-        if i > 11: mindis_i = 10
-        elif i < 11 and i > 1: mindis_i = i - 1
-        else: mindis_i = 0
+            if i > 11: mindis_i = 10
+            elif i < 11 and i > 1: mindis_i = i - 1
+            else: mindis_i = 0
 
-        if j > 11: mindis_j= 10
-        elif j < 11 and j > 0: mindis_j = j - 1
-        else: mindis_j = 0
+            if j > 11: mindis_j= 10
+            elif j < 11 and j > 0: mindis_j = j - 1
+            else: mindis_j = 0
 
+            if 531 - j > 11: sm_j = 10
+            elif 531 - j < 11 and 531 - j > 1: sm_j = 531 - j - 1
+            else: sm_j = 0
 
-        if 531 - j > 11: sm_j = 10
-        elif 531 - j < 11 and 531 - j > 1: sm_j = 531 - j - 1
-        else: sm_j = 0
+            if 691 - i > 11: sm_i = 10
+            elif 691 - i < 11 and 691 - i > 0: sm_i = 691 - i - 1
+            else: sm_i = 0
 
-        if 691 - i > 11: sm_i = 10
-        elif 691 - i < 11 and 691 - i > 0: sm_i = 691 - i - 1
-        else: sm_i = 0
+            bunkers_u.append(np.ma.mean(np.ma.masked_invalid(self.data_dict[date].bunkers_uv[0][i-mindis_i:i+sm_i,j-mindis_j:j+sm_j])))
 
-        bunkers_u.append(np.ma.mean(np.ma.masked_invalid(self.data_dict[date].bunkers_uv[0][i-mindis_i:i+sm_i,j-mindis_j:j+sm_j])))
-
-        bunkers_v.append(np.ma.mean(np.ma.masked_invalid(self.data_dict[date].bunkers_uv[1][i-mindis_i:i+sm_i,j-mindis_j:j+sm_j])))
+            bunkers_v.append(np.ma.mean(np.ma.masked_invalid(self.data_dict[date].bunkers_uv[1][i-mindis_i:i+sm_i,j-mindis_j:j+sm_j])))
         
-        mean_u.append(np.ma.mean(np.ma.masked_invalid(self.data_dict[date].mean_wind[0][i-mindis_i:i+sm_i,j-mindis_j:j+sm_j])))
+            mean_u.append(np.ma.mean(np.ma.masked_invalid(self.data_dict[date].mean_wind[0][i-mindis_i:i+sm_i,j-mindis_j:j+sm_j])))
 
-        mean_v.append(np.ma.mean(np.ma.masked_invalid(self.data_dict[date].mean_wind[1][i-mindis_i:i+sm_i,j-mindis_j:j+sm_j])))
+            mean_v.append(np.ma.mean(np.ma.masked_invalid(self.data_dict[date].mean_wind[1][i-mindis_i:i+sm_i,j-mindis_j:j+sm_j])))
                 
 
         self.tracks_file['Mean_U'] = mean_u

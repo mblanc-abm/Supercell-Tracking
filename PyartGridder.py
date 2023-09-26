@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from tint import Cell_tracks, animate
 from pprint import pprint
 import re 
+from datetime import timedelta, datetime
 
 def get_point(latpoint, lonpoint, lats, lons):
 	a = abs( lats-latpoint ) + abs( lons-lonpoint )
@@ -30,9 +31,7 @@ class wrf_make_grid:
 		
         # 2D lat-lon projection. 
 		self.latss = self.data.variables['XLAT']
-		self.lonss = self.data.variables['XLONG']
-
-        middle_x, middle_y = len(self.latss[:,0]) / 2., len(self.latss[0,:]) / 2.
+		self.lonss, middle_x, middle_y = self.data.variables['XLONG'], len(self.latss[:,0]) / 2., len(self.latss[0,:]) / 2.
 
 		self.x, self.y = core.geographic_to_cartesian(self.lonss, self.latss, {'lat_0':self.latss[middle_x, middle_y],'lon_0':self.lonss[middle_x, middle_y], 'proj':'lcc'})
 
@@ -46,11 +45,9 @@ class wrf_make_grid:
 		self.radar_altitude = {'data': [1500]}
 
 		
-		self.proj = {'lat_0':self.latss[middle_x, middle_y],\  
-            'lon_0':self.lonss[middle_x, middle_y], 'proj': 'lcc'}
+		self.proj = {'lat_0':self.latss[middle_x, middle_y], 'lon_0':self.lonss[middle_x, middle_y], 'proj': 'lcc'}
 		self.origin_latitude = {'standard_name':'latitude', 'data':self.latss[middle_x, middle_y]}
-		self.origin_longitude = {'standard_name':'longitude', \
-            'data':self.lonss[middle_x, middle_y]}
+		self.origin_longitude = {'standard_name':'longitude', 'data':self.lonss[middle_x, middle_y]}
 		self.x = {'data': self.xpoints}
 		self.y = {'data': self.ypoints}
 		self.z = {'data': self.zpoints}	

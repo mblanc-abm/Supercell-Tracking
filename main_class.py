@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 from cartopy.feature import NaturalEarthFeature
 import cartopy.crs as crs
 import gc
-import PyartGridder_new as PyartGridder
+import PyartGridder#_new as PyartGridder
 import pprint
 from tint import Cell_tracks
 from tools import hour_check, predict_location
@@ -323,7 +323,7 @@ class Instance_Dict_Builder:
 
       
         for thing in os.listdir(self.three_month_path):
-            for var in var3_list:
+            for var in var_list:
                 file_date = thing.split('_')
 
                 

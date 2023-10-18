@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 from cartopy.feature import NaturalEarthFeature
 import cartopy.crs as crs
 import glob
+import numpy as np
 
 # Function  to predict new lat-lon location based on previous location and velocity. 
 def predict_location(bu, bv, start_lat, start_lon, direction):
@@ -106,7 +107,18 @@ def update_uids(run_type, dirr):
       except (IOError, pd.errors.EmptyDataError) as err:
          print(err) 
 
-   
+  
+
+# -------------------------------------------------------------------------------------------- #
+
+def check_uid(uid, dictionary):
+   if uid in dictionary.keys():
+      return True
+   else:
+      return False
+
+# -------------------------------------------------------------------------------------------- 
+    
 # Connect the cells that cross over from each daily tracking file. Unlikely since the tracking files
 # go from 12z to 12z
 def cross_overs(run_type, dirr):
@@ -141,12 +153,12 @@ def cross_overs(run_type, dirr):
                 new_concat = pd.concat([new_concat,current_df]).drop_duplicates(['time','lat','lon'],keep='first').sort_values('time')
       
             except UnboundLocalError:
-               new_concat = pd.concat([previous_df,current_df]).drop_duplicates(['time','lat','lon'],keep='first').sort_values('time')
+                new_concat = pd.concat([previous_df,current_df]).drop_duplicates(['time','lat','lon'],keep='first').sort_values('time')
 
          except KeyError:
-            pass
+             pass
       except IOError:
-         pass   
+          pass   
    
    
    headers = list(new_concat.dtypes.index)
@@ -156,150 +168,137 @@ def cross_overs(run_type, dirr):
    
 
 
-import sys
-run_type_dict = {}
+   run_type_dict = {}
 
-# The directory with all the tracking stuff. 
-directories = sorted(glob.glob('./tracks'))
+   # The directory with all the tracking stuff. 
+   directories = sorted(glob.glob('./tracks'))
 
 
-# Opens the full concatenated tracks files, creates a dictionary of each supercell.
-# Checks each supercell dictionary to confirm if the cell is a supercell
-# Writes, total_tracks.csv as the final csv with all confirmed supercells
+   # Opens the full concatenated tracks files, creates a dictionary of each supercell.
+   # Checks each supercell dictionary to confirm if the cell is a supercell
+   # Writes, total_tracks.csv as the final csv with all confirmed supercells
 
-for full_directory in directories:
+   for full_directory in directories: # not sure of the indentation from here on
 
-   directory = full_directory.split('/')[-1].split('-')[-1]
+       directory = full_directory.split('/')[-1].split('-')[-1]
    
-   if sys.argv[1] == '1':
-      update_uids(directory)
-      cross_overs(directory)
+       if sys.argv[1] == '1':
+           update_uids(directory)
+           cross_overs(directory)
+
+       cells = {}
    
-   # -------------------------------------------------------------------------------------------- #
-   # -------------------------------------------------------------------------------------------- #
-   # -------------------------------------------------------------------------------------------- #
-   
-   def check_uid(uid, dictionary):
-      if uid in dictionary.keys():
-         return True
-      else:
-         return False
+       read_file = open('./tracks/tracks_concat.csv' % (directory))
 
-   # -------------------------------------------------------------------------------------------- 
+       for index, line in enumerate(read_file):
+           things = line.split(',')[1:]
 
-   cells = {}
-   
-   read_file = open('./tracks/tracks_concat.csv' % (directory))
+           if index == 0:
+               continue
 
-   for index, line in enumerate(read_file):
-      things = line.split(',')[1:]
+           try:
+               cells[str(things[1])]['locations'].extend([float(things[6]),float(things[5])])
+               cells[str(things[1])]['type'].extend([things[11]])
+               cells[str(things[1])]['reflect'].extend([float(things[9])])
+               cells[str(things[1])]['area'].extend([float(things[7])])
+               #print(things[12])
 
-      if index == 0:
-         continue
+               if things[12] == '-': 
+                   uh = -999
+               else:
+                   uh = float(things[12])
 
-      try:
-         cells[str(things[1])]['locations'].extend([float(things[6]),float(things[5])])
-         cells[str(things[1])]['type'].extend([things[11]])
-         cells[str(things[1])]['reflect'].extend([float(things[9])])
-         cells[str(things[1])]['area'].extend([float(things[7])])
-         #print(things[12])
-
-         if things[12] == '-': 
-            uh = -999
-         else:
-            uh = float(things[12])
-
-         cells[str(things[1])]['uh'].extend([uh])
-         cells[str(things[1])]['mean_u'].extend([float(things[13])])
-         cells[str(things[1])]['mean_v'].extend([float(things[14])])
-         cells[str(things[1])]['bunkers_u'].extend([float(things[15])])
-         cells[str(things[1])]['bunkers_v'].extend([float(things[16])])
-         cells[str(things[1])]['time'].extend([str(things[2])])
+               cells[str(things[1])]['uh'].extend([uh])
+               cells[str(things[1])]['mean_u'].extend([float(things[13])])
+               cells[str(things[1])]['mean_v'].extend([float(things[14])])
+               cells[str(things[1])]['bunkers_u'].extend([float(things[15])])
+               cells[str(things[1])]['bunkers_v'].extend([float(things[16])])
+               cells[str(things[1])]['time'].extend([str(things[2])])
       
 
 
-      except KeyError:
-         if things[12] == '-': 
-            uh = -999
-         else:
-            uh = float(things[12])
+           except KeyError:
+               if things[12] == '-': 
+                   uh = -999
+               else:
+                   uh = float(things[12])
 
-         cells[str(things[1])] = {'locations': [float(things[6]), float(things[5])],\
-            'type': [things[11]],'area': [float(things[7])], 'reflect': [float(things[9])], 'uh': [uh], \
-            'mean_u':[float(things[13])], 'mean_v':[float(things[14])], 'bunkers_u':[float(things[15])],\
-            'bunkers_v':[float(things[16])], 'time': [str(things[2])]}
+               cells[str(things[1])] = {'locations': [float(things[6]), float(things[5])],\
+                                        'type': [things[11]],'area': [float(things[7])], 'reflect': [float(things[9])], 'uh': [uh], \
+                                        'mean_u':[float(things[13])], 'mean_v':[float(things[14])], 'bunkers_u':[float(things[15])],\
+                                        'bunkers_v':[float(things[16])], 'time': [str(things[2])]}
 
 
 
-   # Get the bunkers and mean wind predicted locations.
-   for uid in cells.keys():
-      uid = str(uid)
+       # Get the bunkers and mean wind predicted locations.
+       for uid in cells.keys():
+           uid = str(uid)
       
-      if len(cells[uid]['time']) == 1:
-         cells[uid]['bunkers_locations'] = cells[uid]['locations'][:2]
-         cells[uid]['mean_locations'] = cells[uid]['locations'][:2]
-
-      # def predict_location(bu, bv, start_lat, start_lon, direction):
-
-      elif len(cells[uid]['time']) > 1:
-         b_u = cells[uid]['bunkers_u']
-         b_v = cells[uid]['bunkers_v']
-         m_u = cells[uid]['mean_u']
-         m_v = cells[uid]['mean_v']
-
-         lats, lons = cells[uid]['locations'][0::2], cells[uid]['locations'][1::2]
-
-         for loc in range(len(lats)):
-
-            if loc == 0:
+           if len(cells[uid]['time']) == 1:
                cells[uid]['bunkers_locations'] = cells[uid]['locations'][:2]
                cells[uid]['mean_locations'] = cells[uid]['locations'][:2]
 
-            else:                 
-               hour = int(datetime.strptime(str(cells[uid]['time'][0]), '%Y-%m-%d %H:%M:%S').hour)
+      # def predict_location(bu, bv, start_lat, start_lon, direction):
+
+           elif len(cells[uid]['time']) > 1:
+               b_u = cells[uid]['bunkers_u']
+               b_v = cells[uid]['bunkers_v']
+               m_u = cells[uid]['mean_u']
+               m_v = cells[uid]['mean_v']
+
+           lats, lons = cells[uid]['locations'][0::2], cells[uid]['locations'][1::2]
+
+           for loc in range(len(lats)):
+
+               if loc == 0:
+                   cells[uid]['bunkers_locations'] = cells[uid]['locations'][:2]
+                   cells[uid]['mean_locations'] = cells[uid]['locations'][:2]
+
+               else:                 
+                   hour = int(datetime.strptime(str(cells[uid]['time'][0]), '%Y-%m-%d %H:%M:%S').hour)
                
-               b_u_mean, b_v_mean = np.mean(b_u[loc-1:loc+1]), np.mean(b_v[loc-1:loc+1])
-               m_u_mean, m_v_mean = np.mean(m_u[loc-1:loc+1]), np.mean(m_v[loc-1:loc+1])
+                   b_u_mean, b_v_mean = np.mean(b_u[loc-1:loc+1]), np.mean(b_v[loc-1:loc+1])
+                   m_u_mean, m_v_mean = np.mean(m_u[loc-1:loc+1]), np.mean(m_v[loc-1:loc+1])
 
-               cells[uid]['bunkers_locations'].extend(predict_location(b_u_mean, b_v_mean, lats[loc-1], lons[loc-1], 'forward'))
-               cells[uid]['mean_locations'].extend(predict_location(m_u_mean, m_v_mean, lats[loc-1], lons[loc-1], 'forward'))
+                   cells[uid]['bunkers_locations'].extend(predict_location(b_u_mean, b_v_mean, lats[loc-1], lons[loc-1], 'forward'))
+                   cells[uid]['mean_locations'].extend(predict_location(m_u_mean, m_v_mean, lats[loc-1], lons[loc-1], 'forward'))
 
 
-   # Now checking if supercell!
-   uid_list, uhs, all_, all_bunks, bunks_highuh, all_uh = [], [], [], [], [], []
-   i = 1
-   for uid in cells.keys():
+       # Now checking if supercell!
+       uid_list, uhs, all_, all_bunks, bunks_highuh, all_uh = [], [], [], [], [], []
+       i = 1
+       for uid in cells.keys():
    
-      uid = str(uid)
+           uid = str(uid)
 
-      bunkers_dist, mw_dist = [], []
+           bunkers_dist, mw_dist = [], []
 
-      for q, num in enumerate(np.array(cells[uid]['locations'][0::2])):
-         bunkers_dist.append(distance(cells[uid]['locations'][0::2][q], cells[uid]['bunkers_locations'][0::2][q], cells[uid]['locations'][1::2][q], cells[uid]['bunkers_locations'][1::2][q]))
+           for q, num in enumerate(np.array(cells[uid]['locations'][0::2])):
+               bunkers_dist.append(distance(cells[uid]['locations'][0::2][q], cells[uid]['bunkers_locations'][0::2][q], cells[uid]['locations'][1::2][q], cells[uid]['bunkers_locations'][1::2][q]))
         
 
-      for q, num in enumerate(np.array(cells[uid]['locations'][0::2])):
-         mw_dist.append(distance(cells[uid]['locations'][0::2][q], cells[uid]['mean_locations'][0::2][q], cells[uid]['locations'][1::2][q], cells[uid]['mean_locations'][1::2][q]))     
+           for q, num in enumerate(np.array(cells[uid]['locations'][0::2])):
+               mw_dist.append(distance(cells[uid]['locations'][0::2][q], cells[uid]['mean_locations'][0::2][q], cells[uid]['locations'][1::2][q], cells[uid]['mean_locations'][1::2][q]))     
      
    
-      mean_bunk, mean_mw = np.mean(bunkers_dist[1:]), np.mean(mw_dist[1:])
+           mean_bunk, mean_mw = np.mean(bunkers_dist[1:]), np.mean(mw_dist[1:])
       
 
-      if any(item > 45 for item in cells[str(uid)]['reflect']) and any(item == 'True' for item in cells[str(uid)]['type']):
+           if any(item > 45 for item in cells[str(uid)]['reflect']) and any(item == 'True' for item in cells[str(uid)]['type']):
 
-         if (any(item >= 75 for item in cells[str(uid)]['uh'])) or ((mean_bunk < mean_mw) and mean_bunk < 30 and (any(item < 75 and item >= 25 for item in cells[str(uid)]['uh'])) and len(cells[str(uid)]['uh']) > 1 and (all(item < 75 for item in cells[str(uid)]['uh']))):
+               if (any(item >= 75 for item in cells[str(uid)]['uh'])) or ((mean_bunk < mean_mw) and mean_bunk < 30 and (any(item < 75 and item >= 25 for item in cells[str(uid)]['uh'])) and len(cells[str(uid)]['uh']) > 1 and (all(item < 75 for item in cells[str(uid)]['uh']))):
 
-            uid_list.append(uid)  
+                   uid_list.append(uid)  # sure of this indentation ??
 
-   # Save the uid list for the current supercell configuration. Can change this obviously. 
-   np.save('./UIDs/final/%s_uids_%s' % (run_type, 'All'), np.array(uid_list))
+       # Save the uid list for the current supercell configuration. Can change this obviously. 
+       np.save('./UIDs/final/%s_uids_%s' % (run_type, 'All'), np.array(uid_list))
       
-   with open('./tracks/total_tracks.csv', 'w') as csv_file:
-      writer = csv.writer(csv_file)
+       with open('./tracks/total_tracks.csv', 'w') as csv_file:
+           writer = csv.writer(csv_file)
 
-      # CHANGE THIS LINE TO USE WHATEVER UID LIST YOU WANT.
-      for key in uid_list:
-            writer.writerow([key, cells[key]])
+           # CHANGE THIS LINE TO USE WHATEVER UID LIST YOU WANT.
+           for key in uid_list:
+               writer.writerow([key, cells[key]])
 
 
 
